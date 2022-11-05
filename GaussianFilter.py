@@ -1,7 +1,5 @@
 import cv2
-from numpy import fft
 import numpy as np
-import matplotlib.pyplot as plt
 import time
 
 # 바깥쪽 패딩 채우기
@@ -95,31 +93,27 @@ def my_filtering(img, kernel, boundary=0):
 
     return filtered_img
 
-# img read by grayscale(0)
+
+# 1000x500 img   read by grayscale(0)
 src = cv2.imread('dgu_gray.png', 0)
-height, width = src.shape
-
-f_dgu = fft.fft2(src)
-fshift_dgu = fft.fftshift(f_dgu)
-magnitude_src = 20*np.log(np.abs(fshift_dgu))
-phase_src = np.angle(fshift_dgu)
-
 # get Gaussian Kernal 필터 크기 홀수 x 홀수인 모든 필터를 만족해야한다.
+gaus2D = my_getGKernel((51, 51), 13)
 gaus1D = my_getGKernel((1, 51), 13)
 
+start = time.perf_counter()  # 시간 측정
+# 2D filtering
+img2D = my_filtering(src, gaus2D)
+end = time.perf_counter()
+print("2D:", end - start)
+
+start = time.perf_counter()
 # 1D filtering
 img1D = my_filtering(src, gaus1D)
 img1D = my_filtering(img1D, gaus1D.T)
+end = time.perf_counter()
+print("1D:", end - start)
 
-# 라플라시안 필터
-mask = np.array([[-1, -1, -1], [-1, 8, -1], [-1, -1, -1]])
-laplacian = cv2.filter2D(src, -1, mask)
-
-cv2.imshow('Original', src.astype(np.uint8))
-cv2.imshow('Magnitude',magnitude_src.astype(np.uint8))
-cv2.imshow('Phase',phase_src.astype(np.uint8))
-cv2.imshow('Gaussian Filter', img1D.astype(np.uint8))
-cv2.imshow('Laplacian Filter', laplacian.astype(np.uint8))
-
+cv2.imshow('img1D', img1D.astype(np.uint8))
+cv2.imshow('img2D', img2D.astype(np.uint8))
 cv2.waitKey()
 cv2.destroyAllWindows()
